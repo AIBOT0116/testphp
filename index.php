@@ -19,17 +19,15 @@ if (empty($base) || empty($path)) {
     exit();
 }
 
-// Ensure base is a valid URL
+// Ensure base URL is well-formed (fix any missing slashes)
 if (!filter_var($base, FILTER_VALIDATE_URL)) {
-    http_response_code(400);
-    echo "Invalid base URL.";
-    exit();
+    $base = "https://" . $base; // Ensure that "https://" is added if missing
 }
 
 // Build full target URL
 $targetURL = rtrim($base, '/') . '/' . ltrim($path, '/');
 
-// Setup headers
+// Set headers for fetching the resource
 $context = stream_context_create([
     'http' => [
         'header' => "User-Agent: Mozilla/5.0\r\n",
@@ -38,7 +36,7 @@ $context = stream_context_create([
     ]
 ]);
 
-// Fetch
+// Fetch the resource
 $res = @file_get_contents($targetURL, false, $context);
 
 if ($res === false) {
