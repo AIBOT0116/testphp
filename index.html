@@ -2,30 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MPD Proxy Fetcher</title>
+  <title>Stream Proxy Fetcher</title>
 </head>
 <body>
-  <h2>MPD Proxy Fetcher</h2>
-  <label for="domain">Base Domain:</label>
-  <input type="text" id="domain" placeholder="e.g., example.com">
-  <br><br>
-  <label for="path">MPD Path:</label>
-  <input type="text" id="path" placeholder="e.g., abc/index.mpd">
-  <br><br>
-  <button onclick="fetchMPD()">Fetch MPD</button>
+  <h2>Stream Proxy Fetcher</h2>
 
-  <pre id="output"></pre>
+  <label>Base URL:</label><br>
+  <input type="text" id="domain" placeholder="https://dai.fancode.com/"><br><br>
+
+  <label>Path:</label><br>
+  <input type="text" id="path" placeholder="primary/126291_english_hls_97827ta-di_h264/index.m3u8"><br><br>
+
+  <button onclick="fetchStream()">Fetch</button>
+
+  <pre id="output" style="white-space: pre-wrap;"></pre>
 
   <script>
-    function fetchMPD() {
-      const domain = document.getElementById('domain').value;
-      const path = document.getElementById('path').value;
+    function fetchStream() {
+      const domain = document.getElementById('domain').value.trim();
+      const path = document.getElementById('path').value.trim();
 
       const url = `index.php?domain=${encodeURIComponent(domain)}&get=${encodeURIComponent(path)}`;
 
       fetch(url)
         .then(response => {
-          if (!response.ok) throw new Error("Failed to fetch MPD.");
+          if (!response.ok) throw new Error("Failed to fetch stream.");
           return response.text();
         })
         .then(data => {

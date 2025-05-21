@@ -12,36 +12,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $get = isset($_GET['get']) ? ltrim($_GET['get'], '/') : '';
 $domain = isset($_GET['domain']) ? trim($_GET['domain']) : '';
 
+// Ensure trailing slash is not doubled
+$domain = rtrim($domain, '/') . '/';
+
 if (empty($get) || empty($domain)) {
     http_response_code(400);
     echo "Missing domain or path.";
     exit();
 }
 
-if (!preg_match('/^[a-z0-9.-]+\.[a-z]{2,}$/i', $domain)) {
+// Optional domain validation (allow full URLs now)
+if (!filter_var($domain . $get, FILTER_VALIDATE_URL)) {
     http_response_code(400);
-    echo "Invalid domain format.";
+    echo "Invalid domain or path.";
     exit();
 }
 
-$mpdUrl = 'https://' . $domain . '/' . $get;
+$targetUrl = $domain . $get;
 
-$mpdheads = [
-  'http' => [
-      'header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36\r\n",
-      'follow_location' => 1,
-      'timeout' => 5
-  ]
-];
-$context = stream_context_create($mpdheads);
+$context = stream_context_create([
+    'http' => [
+        'header' => "User-Agent: Mozilla/5.0\r\n",
+        'follow_location' => 1,
+        'timeout' => 5
+    ]
+]);
 
-$res = @file_get_contents($mpdUrl, false, $context);
+$response = @file_get_contents($targetUrl, false, $context);
 
-if ($res === false) {
+if ($response === false) {
     http_response_code(502);
     echo "Failed to fetch resource.";
 } else {
-    header("Content-Type: application/dash+xml");
-    echo $res;
+    // Try to forward content type
+    header("Content-Type: text/plain");
+    echo $response;
 }
 ?>
