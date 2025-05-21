@@ -9,27 +9,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-$get = isset($_GET['get']) ? ltrim($_GET['get'], '/') : '';
-$domain = isset($_GET['domain']) ? trim($_GET['domain']) : '';
+// Get input parameters
+$base = $_GET['base'] ?? '';
+$path = $_GET['path'] ?? '';
 
-// Ensure trailing slash is not doubled
-$domain = rtrim($domain, '/') . '/';
-
-if (empty($get) || empty($domain)) {
+if (empty($base) || empty($path)) {
     http_response_code(400);
-    echo "Missing domain or path.";
+    echo "Missing 'base' or 'path' parameter.";
     exit();
 }
 
-// Optional domain validation (allow full URLs now)
-if (!filter_var($domain . $get, FILTER_VALIDATE_URL)) {
+// Ensure base is a valid URL
+if (!filter_var($base, FILTER_VALIDATE_URL)) {
     http_response_code(400);
-    echo "Invalid domain or path.";
+    echo "Invalid base URL.";
     exit();
 }
 
-$targetUrl = $domain . $get;
+// Build full target URL
+$targetURL = rtrim($base, '/') . '/' . ltrim($path, '/');
 
+// Setup headers
 $context = stream_context_create([
     'http' => [
         'header' => "User-Agent: Mozilla/5.0\r\n",
@@ -38,14 +38,26 @@ $context = stream_context_create([
     ]
 ]);
 
-$response = @file_get_contents($targetUrl, false, $context);
+// Fetch
+$res = @file_get_contents($targetURL, false, $context);
 
-if ($response === false) {
+if ($res === false) {
     http_response_code(502);
     echo "Failed to fetch resource.";
-} else {
-    // Try to forward content type
-    header("Content-Type: text/plain");
-    echo $response;
+    exit();
 }
-?>
+
+// Detect content type
+$ext = pathinfo(parse_url($path, PHP_URL_PATH), PATHINFO_EXTENSION);
+switch ($ext) {
+    case 'mpd':
+        header("Content-Type: application/dash+xml");
+        break;
+    case 'm3u8':
+        header("Content-Type: application/vnd.apple.mpegurl");
+        break;
+    default:
+        header("Content-Type: application/octet-stream");
+}
+
+echo $res;
