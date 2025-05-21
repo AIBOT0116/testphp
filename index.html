@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MPD Proxy Fetcher</title>
+</head>
+<body>
+  <h2>MPD Proxy Fetcher</h2>
+  <label for="domain">Base Domain:</label>
+  <input type="text" id="domain" placeholder="e.g., example.com">
+  <br><br>
+  <label for="path">MPD Path:</label>
+  <input type="text" id="path" placeholder="e.g., abc/index.mpd">
+  <br><br>
+  <button onclick="fetchMPD()">Fetch MPD</button>
+
+  <pre id="output"></pre>
+
+  <script>
+    function fetchMPD() {
+      const domain = document.getElementById('domain').value;
+      const path = document.getElementById('path').value;
+
+      const url = `index.php?domain=${encodeURIComponent(domain)}&get=${encodeURIComponent(path)}`;
+
+      fetch(url)
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to fetch MPD.");
+          return response.text();
+        })
+        .then(data => {
+          document.getElementById('output').textContent = data;
+        })
+        .catch(err => {
+          document.getElementById('output').textContent = "Error: " + err.message;
+        });
+    }
+  </script>
+</body>
+</html>
